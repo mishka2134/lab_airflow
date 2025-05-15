@@ -29,30 +29,28 @@ def clear_data():
     print(f"Cleaned data shape: {df.shape}")
     return True
 
-dag_energy = DAG(
+with DAG(
     dag_id="energy_pipeline",
     start_date=datetime(2025, 2, 3),
-    schedule_interval=timedelta(minutes=5),
-    concurrency=4,
+    schedule=timedelta(minutes=5),  
+    max_active_tasks=4,
     max_active_runs=1,
     catchup=False,
-)
+) as dag_energy:
 
-download_task = PythonOperator(
-    task_id="download_energy_data",
-    python_callable=download_data,
-    dag=dag_energy
-)
+    download_task = PythonOperator(
+        task_id="download_energy_data",
+        python_callable=download_data,
+    )
 
-clear_task = PythonOperator(
-    task_id="clean_energy_data",
-    python_callable=clear_data,
-    dag=dag_energy
-)
+    clear_task = PythonOperator(
+        task_id="clean_energy_data",
+        python_callable=clear_data,
+    )
 
-train_task = PythonOperator(
-    task_id="train_energy_model",
-    python_callable=train,
-    dag=dag_energy
-)
-download_task >> clear_task >> train_task
+    train_task = PythonOperator(
+        task_id="train_energy_model",
+        python_callable=train,
+    )
+    
+    download_task >> clear_task >> train_task
